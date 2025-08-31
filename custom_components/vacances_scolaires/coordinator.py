@@ -92,13 +92,13 @@ class VacancesScolairesDataUpdateCoordinator(DataUpdateCoordinator):
             location = self.config.get(CONF_LOCATION)
             api_url = (
                 f"https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-calendrier-scolaire/"
-                f"records?where=end_date%3E%22{today_str}%22&order_by=start_date%20ASC&limit=2&refine=location%3A{location}"
+                f"records?where=end_date%3E%3Ddate%27{today_str}%27&order_by=start_date%20ASC&limit=2&refine=location%3A{location}"
             )
         elif config_type == "zone":
             zone = self.config.get(CONF_ZONE)
             api_url = (
                 f"https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-calendrier-scolaire/"
-                f"records?where=end_date%3E%22{today_str}%22&order_by=start_date%20ASC&limit=2&refine=zones%3A{zone}"
+                f"records?where=end_date%3E%3Ddate%27{today_str}%27&order_by=start_date%20ASC&limit=2&refine=zones%3A{zone}"
             )
         else:
             raise UpdateFailed("Invalid configuration type")
