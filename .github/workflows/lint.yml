@@ -14,16 +14,16 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
         - name: "Checkout the repository"
-          uses: "actions/checkout@v4.2.2"
+          uses: "actions/checkout@v6.0.1"
 
         - name: "Set up Python"
-          uses: actions/setup-python@v5.4.0
+          uses: actions/setup-python@v6.1.0
           with:
-            python-version: "3.12"
+            python-version: "3.13"
             cache: "pip"
 
         - name: "Install requirements"
-          run: python3 -m pip install -r requirements.txt
+          run: python3 -m pip install -r requirements.txt types-pytz
 
         - name: "Lint"
           run: python3 -m ruff check .
@@ -35,7 +35,8 @@ jobs:
           run: black --check .
 
         - name: "Run Mypy"
-          run: mypy . || echo "Mypy finished with errors but continuing"
+          run: |
+            mypy . || echo "Mypy finished with errors but continuing"
 
         - name: "Pylint"
           run: pylint custom_components || true
