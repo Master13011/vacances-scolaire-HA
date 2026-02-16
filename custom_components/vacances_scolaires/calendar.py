@@ -1,7 +1,13 @@
+from __future__ import annotations
+
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from typing import Any
 from .const import DOMAIN
 from .coordinator import get_timezone
 
@@ -35,7 +41,7 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
         self.entry_id = config_entry.entry_id
 
     @property
-    def event(self):
+    def event(self) -> CalendarEvent | None:
         """Return the next upcoming event."""
         if self.coordinator.data["on_vacation"]:
             start_date_str = self.coordinator.data["start_date"]
@@ -56,7 +62,9 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
             )
         return None
 
-    async def async_get_events(self, hass, start_date, end_date):
+    async def async_get_events(
+        self, hass: HomeAssistant, start_date: datetime, end_date: datetime
+    ) -> list[CalendarEvent]:
         """Get all events in a specific time frame."""
         events = []
         if self.coordinator.data["on_vacation"]:
@@ -81,7 +89,7 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
         return events
         
     @property
-    def device_info(self):
+    def device_info(self) -> dict[str, Any]:
         return {
             "identifiers": {(DOMAIN, self.entry_id)},
             "name": "Vacances Scolaires",
@@ -89,7 +97,11 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
             "model": "API",
         }
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the Vacances Scolaires Calendar platform."""
     coordinator = hass.data[DOMAIN][config_entry.entry_id]
     async_add_entities([VacancesScolairesCalendar(coordinator, config_entry)], True)

@@ -76,20 +76,21 @@ class VacancesScolairesSensor(CoordinatorEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the state attributes."""
+        attrs = {}
         if self.coordinator.data:
-            return {
+            attrs = {
                 ATTR_START_DATE: self.coordinator.data.get("start_date"),
                 ATTR_END_DATE: self.coordinator.data.get("end_date"),
                 ATTR_DESCRIPTION: self.coordinator.data.get("description"),
                 ATTR_LOCATION: self.coordinator.data.get("location"),
                 ATTR_ZONE: self.coordinator.data.get("zone"),
-                ATTR_ANNEE_SCOLAIRE: self.coordinator.data.get("année_scolaire"),
+                ATTR_ANNEE_SCOLAIRE: self.coordinator.data.get("annee_scolaire"),
                 ATTR_EN_VACANCES: self.coordinator.data.get("on_vacation")
             }
-        return {}
+        return attrs
 
     @property
-    def device_info(self):
+    def device_info(self) -> dict[str, Any]:
         return {
             "identifiers": {(DOMAIN, self.entry.entry_id)},
             "name": "Vacances Scolaires",
@@ -133,9 +134,25 @@ class VacancesScolairesAujourdHuiSensor(CoordinatorEntity, SensorEntity):
         if start_date <= today <= end_date:
             return "En vacances"
         return "Pas en vacances"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the state attributes."""
+        attrs = {}
+        if self.coordinator.data:
+            attrs = {
+                ATTR_START_DATE: self.coordinator.data.get("start_date"),
+                ATTR_END_DATE: self.coordinator.data.get("end_date"),
+                ATTR_DESCRIPTION: self.coordinator.data.get("description"),
+                ATTR_LOCATION: self.coordinator.data.get("location"),
+                ATTR_ZONE: self.coordinator.data.get("zone"),
+                ATTR_ANNEE_SCOLAIRE: self.coordinator.data.get("annee_scolaire"),
+                ATTR_EN_VACANCES: self.coordinator.data.get("on_vacation")
+            }
+        return attrs
         
     @property
-    def device_info(self):
+    def device_info(self) -> dict[str, Any]:
         return {
             "identifiers": {(DOMAIN, self.entry.entry_id)},
             "name": "Vacances Scolaires",
@@ -181,10 +198,27 @@ class VacancesScolairesDemainSensor(CoordinatorEntity, SensorEntity):
         return "Pas en vacances"
 
     @property
-    def device_info(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the state attributes."""
+        attrs = {}
+        if self.coordinator.data:
+            attrs = {
+                ATTR_START_DATE: self.coordinator.data.get("start_date"),
+                ATTR_END_DATE: self.coordinator.data.get("end_date"),
+                ATTR_DESCRIPTION: self.coordinator.data.get("description"),
+                ATTR_LOCATION: self.coordinator.data.get("location"),
+                ATTR_ZONE: self.coordinator.data.get("zone"),
+                ATTR_ANNEE_SCOLAIRE: self.coordinator.data.get("annee_scolaire"),
+                ATTR_EN_VACANCES: self.coordinator.data.get("on_vacation")
+            }
+        return attrs
+
+    @property
+    def device_info(self) -> dict[str, Any]:
         return {
             "identifiers": {(DOMAIN, self.entry.entry_id)},
             "name": "Vacances Scolaires",
             "manufacturer": "Master13011",
             "model": "API",
         }
+

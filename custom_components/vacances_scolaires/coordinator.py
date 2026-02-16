@@ -4,7 +4,6 @@ from typing import Any
 import asyncio
 from zoneinfo import ZoneInfo
 import aiohttp
-import async_timeout
 import unicodedata
 
 from homeassistant.core import HomeAssistant
@@ -104,7 +103,7 @@ class VacancesScolairesDataUpdateCoordinator(DataUpdateCoordinator):
             raise UpdateFailed("Invalid configuration type")
 
         try:
-            async with async_timeout.timeout(10):
+            async with asyncio.timeout(10):
                 async with aiohttp.ClientSession() as session:
                     async with session.get(api_url, ssl=verify_ssl) as response:
                         if response.status != 200:
@@ -151,7 +150,7 @@ class VacancesScolairesDataUpdateCoordinator(DataUpdateCoordinator):
                             "description": result['description'],
                             "location": result.get('location'),
                             "zone": result.get('zones'),
-                            "année_scolaire": result.get('annee_scolaire'),
+                            "annee_scolaire": result.get('annee_scolaire'),
                             "on_vacation": on_vacation
                         }
         except aiohttp.ClientError as err:

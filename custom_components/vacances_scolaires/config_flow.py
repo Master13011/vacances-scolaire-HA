@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 from homeassistant.core import callback
-
+from homeassistant.data_entry_flow import FlowResult
 from typing import Any
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, ConfigEntry, OptionsFlow
+from homeassistant.config_entries import ConfigFlow, ConfigEntry, OptionsFlow
 
 import logging
 
@@ -32,7 +32,7 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> FlowResult:
         """Handle the initial step."""
         if user_input is None:
             return self.async_show_form(
@@ -49,7 +49,7 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_location(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> FlowResult:
         """Handle the location step."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -72,7 +72,7 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_zone(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> FlowResult:
         """Handle the zone step."""
         errors: dict[str, str] = {}
         if user_input is not None:
