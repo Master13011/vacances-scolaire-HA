@@ -29,7 +29,9 @@ class VacancesScolairesOptionsFlowHandler(OptionsFlow):
         if user_input is not None:
             old_options = self.config_entry.options
 
-            if user_input.get(CONF_VERIFY_SSL) != old_options.get(CONF_VERIFY_SSL, True):
+            if user_input.get(CONF_VERIFY_SSL) != old_options.get(
+                CONF_VERIFY_SSL, True
+            ):
                 _LOGGER.info(
                     f"Option SSL changed from {old_options.get(CONF_VERIFY_SSL, True)} "
                     f"to {user_input.get(CONF_VERIFY_SSL)}"
@@ -37,7 +39,9 @@ class VacancesScolairesOptionsFlowHandler(OptionsFlow):
 
             if user_input.get(CONF_UPDATE_INTERVAL) != old_options.get(
                 CONF_UPDATE_INTERVAL,
-                self.config_entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
+                self.config_entry.data.get(
+                    CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
+                ),
             ):
                 _LOGGER.info(
                     f"Update interval changed from "
