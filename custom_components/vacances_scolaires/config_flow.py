@@ -1,15 +1,13 @@
 """Config flow for Vacances Scolaires integration."""
-
 from __future__ import annotations
 
-from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
 from typing import Any
+from homeassistant.core import callback
 import voluptuous as vol
+import logging
 
 from homeassistant.config_entries import ConfigFlow, ConfigEntry, OptionsFlow
-
-import logging
+from homeassistant.data_entry_flow import FlowResult, FlowContext
 
 from .const import (
     DOMAIN,
@@ -34,7 +32,7 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> FlowResult[FlowContext, str]:
         """Handle the initial step."""
         if user_input is None:
             return self.async_show_form(
@@ -55,11 +53,10 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_location(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> FlowResult[FlowContext, str]:
         """Handle the location step."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            # Validation possible ici
             return self.async_create_entry(
                 title=f"Vacances Scolaires ({user_input[CONF_LOCATION]})",
                 data={**user_input, CONF_CONFIG_TYPE: "location"},
@@ -82,7 +79,7 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_zone(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> FlowResult[FlowContext, str]:
         """Handle the zone step."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -116,5 +113,4 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         from .options_flow import VacancesScolairesOptionsFlowHandler
-
         return VacancesScolairesOptionsFlowHandler(config_entry)
