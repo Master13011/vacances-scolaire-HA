@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -87,15 +87,15 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
                 )
                 events.append(event)
         return events
-        
+
     @property
-    def device_info(self) -> dict[str, Any]:
-        return {
-            "identifiers": {(DOMAIN, self.entry_id)},
-            "name": "Vacances Scolaires",
-            "manufacturer": "Master13011",
-            "model": "API",
-        }
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, self.entry_id)},
+            name="Vacances Scolaires",
+            manufacturer="Master13011",
+            model="API",
+        )
 
 async def async_setup_entry(
     hass: HomeAssistant,
