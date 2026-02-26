@@ -47,8 +47,18 @@ async def async_setup_entry(
 def convert_to_iso_format(date_str: str) -> str:
     """Convertit une date au format '28 mai 2025 à 22:00:00 UTC' en ISO '2025-05-28T22:00:00'."""
     mois = {
-        "janvier": "01", "février": "02", "mars": "03", "avril": "04", "mai": "05", "juin": "06",
-        "juillet": "07", "août": "08", "septembre": "09", "octobre": "10", "novembre": "11", "décembre": "12"
+        "janvier": "01",
+        "février": "02",
+        "mars": "03",
+        "avril": "04",
+        "mai": "05",
+        "juin": "06",
+        "juillet": "07",
+        "août": "08",
+        "septembre": "09",
+        "octobre": "10",
+        "novembre": "11",
+        "décembre": "12",
     }
 
     parts = date_str.split(" ")
@@ -63,7 +73,9 @@ def convert_to_iso_format(date_str: str) -> str:
 class VacancesScolairesSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Vacances Scolaires sensor."""
 
-    def __init__(self, coordinator: VacancesScolairesDataUpdateCoordinator, entry: ConfigEntry) -> None:
+    def __init__(
+        self, coordinator: VacancesScolairesDataUpdateCoordinator, entry: ConfigEntry
+    ) -> None:
         super().__init__(coordinator)
         self.entry = entry
         config_type = entry.data.get(CONF_CONFIG_TYPE, "location")
@@ -108,7 +120,9 @@ class VacancesScolairesSensor(CoordinatorEntity, SensorEntity):
 class VacancesScolairesAujourdHuiSensor(CoordinatorEntity, SensorEntity):
     """Sensor for 'Are we on vacation today?'."""
 
-    def __init__(self, coordinator: VacancesScolairesDataUpdateCoordinator, entry: ConfigEntry) -> None:
+    def __init__(
+        self, coordinator: VacancesScolairesDataUpdateCoordinator, entry: ConfigEntry
+    ) -> None:
         super().__init__(coordinator)
         self.entry = entry
         config_type = entry.data.get(CONF_CONFIG_TYPE, "location")
@@ -162,7 +176,9 @@ class VacancesScolairesAujourdHuiSensor(CoordinatorEntity, SensorEntity):
 class VacancesScolairesDemainSensor(CoordinatorEntity, SensorEntity):
     """Sensor for 'Are we on vacation tomorrow?'."""
 
-    def __init__(self, coordinator: VacancesScolairesDataUpdateCoordinator, entry: ConfigEntry) -> None:
+    def __init__(
+        self, coordinator: VacancesScolairesDataUpdateCoordinator, entry: ConfigEntry
+    ) -> None:
         super().__init__(coordinator)
         self.entry = entry
         config_type = entry.data.get(CONF_CONFIG_TYPE, "location")
@@ -187,7 +203,9 @@ class VacancesScolairesDemainSensor(CoordinatorEntity, SensorEntity):
         start_date = datetime.fromisoformat(convert_to_iso_format(start_date_str))
         end_date = datetime.fromisoformat(convert_to_iso_format(end_date_str))
         tomorrow = datetime.now() + timedelta(days=1)
-        return "En vacances" if start_date <= tomorrow <= end_date else "Pas en vacances"
+        return (
+            "En vacances" if start_date <= tomorrow <= end_date else "Pas en vacances"
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

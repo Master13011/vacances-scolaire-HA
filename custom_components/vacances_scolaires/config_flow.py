@@ -1,4 +1,5 @@
 """Config flow for Vacances Scolaires integration."""
+
 from __future__ import annotations
 
 from homeassistant.core import callback
@@ -20,10 +21,11 @@ from .const import (
     DEFAULT_LOCATION,
     DEFAULT_UPDATE_INTERVAL,
     CONF_VERIFY_SSL,
-    ZONE_OPTIONS
+    ZONE_OPTIONS,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Vacances Scolaires."""
@@ -37,9 +39,13 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is None:
             return self.async_show_form(
                 step_id="user",
-                data_schema=vol.Schema({
-                    vol.Required(CONF_CONFIG_TYPE, default="location"): vol.In(["location", "zone"]),
-                }),
+                data_schema=vol.Schema(
+                    {
+                        vol.Required(CONF_CONFIG_TYPE, default="location"): vol.In(
+                            ["location", "zone"]
+                        ),
+                    }
+                ),
             )
 
         if user_input[CONF_CONFIG_TYPE] == "location":
@@ -56,18 +62,22 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
             # Validation possible ici
             return self.async_create_entry(
                 title=f"Vacances Scolaires ({user_input[CONF_LOCATION]})",
-                data={**user_input, CONF_CONFIG_TYPE: "location"}
+                data={**user_input, CONF_CONFIG_TYPE: "location"},
             )
 
         return self.async_show_form(
             step_id="location",
-            data_schema=vol.Schema({
-                vol.Required(CONF_LOCATION, default=DEFAULT_LOCATION): str,
-                vol.Required(CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL): int,
-                vol.Optional(CONF_CREATE_CALENDAR, default=False): bool,
-                vol.Optional(CONF_VERIFY_SSL, default=True): bool,
-            }),
-            errors=errors
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_LOCATION, default=DEFAULT_LOCATION): str,
+                    vol.Required(
+                        CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL
+                    ): int,
+                    vol.Optional(CONF_CREATE_CALENDAR, default=False): bool,
+                    vol.Optional(CONF_VERIFY_SSL, default=True): bool,
+                }
+            ),
+            errors=errors,
         )
 
     async def async_step_zone(
@@ -82,27 +92,29 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 return self.async_create_entry(
                     title=f"Vacances Scolaires ({zone})",
-                    data={**user_input, CONF_CONFIG_TYPE: "zone"}
+                    data={**user_input, CONF_CONFIG_TYPE: "zone"},
                 )
 
         return self.async_show_form(
             step_id="zone",
-            data_schema=vol.Schema({
-                vol.Required(CONF_ZONE, default=ZONE_OPTIONS[0]): vol.In(ZONE_OPTIONS),
-                vol.Required(CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL): int,
-                vol.Optional(CONF_CREATE_CALENDAR, default=False): bool,
-                vol.Optional(CONF_VERIFY_SSL, default=True): bool,
-            }),
-            errors=errors
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_ZONE, default=ZONE_OPTIONS[0]): vol.In(
+                        ZONE_OPTIONS
+                    ),
+                    vol.Required(
+                        CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL
+                    ): int,
+                    vol.Optional(CONF_CREATE_CALENDAR, default=False): bool,
+                    vol.Optional(CONF_VERIFY_SSL, default=True): bool,
+                }
+            ),
+            errors=errors,
         )
-        
+
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         from .options_flow import VacancesScolairesOptionsFlowHandler
+
         return VacancesScolairesOptionsFlowHandler(config_entry)
-
-
-
-
-

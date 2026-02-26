@@ -37,5 +37,5 @@ ZONE_OPTIONS = [
     "Polynésie française",
     "Réunion",
     "Saint Pierre et Miquelon",
-    "Wallis et Futuna"
+    "Wallis et Futuna",
 ]

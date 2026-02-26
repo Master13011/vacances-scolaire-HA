@@ -7,16 +7,26 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from typing import Any
 from .const import DOMAIN
 from .coordinator import get_timezone
+
 
 # Fonction pour convertir la date dans le bon format et ajouter un fuseau horaire
 def convert_to_iso_format(date_str, location):
     # Créer un dictionnaire pour les mois en français
     mois = {
-        "janvier": "01", "février": "02", "mars": "03", "avril": "04", "mai": "05", "juin": "06",
-        "juillet": "07", "août": "08", "septembre": "09", "octobre": "10", "novembre": "11", "décembre": "12"
+        "janvier": "01",
+        "février": "02",
+        "mars": "03",
+        "avril": "04",
+        "mai": "05",
+        "juin": "06",
+        "juillet": "07",
+        "août": "08",
+        "septembre": "09",
+        "octobre": "10",
+        "novembre": "11",
+        "décembre": "12",
     }
 
     # Extraire les parties de la date
@@ -30,6 +40,7 @@ def convert_to_iso_format(date_str, location):
 
     # Retourner la date au format ISO
     return iso_format_date
+
 
 class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
     """Vacances Scolaires Calendar class."""
@@ -46,14 +57,20 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
         if self.coordinator.data["on_vacation"]:
             start_date_str = self.coordinator.data["start_date"]
             end_date_str = self.coordinator.data["end_date"]
-            location = self.coordinator.data["location"]  # Localisation pour déterminer le fuseau horaire
+            location = self.coordinator.data[
+                "location"
+            ]  # Localisation pour déterminer le fuseau horaire
 
             # Récupérer le fuseau horaire correspondant à la localisation
             timezone = get_timezone(location)  # Utiliser le fuseau horaire dynamique
 
             # Convertir les dates en datetime et appliquer le fuseau horaire
-            start_date = datetime.fromisoformat(convert_to_iso_format(start_date_str, location)).astimezone(ZoneInfo(timezone))
-            end_date = datetime.fromisoformat(convert_to_iso_format(end_date_str, location)).astimezone(ZoneInfo(timezone))
+            start_date = datetime.fromisoformat(
+                convert_to_iso_format(start_date_str, location)
+            ).astimezone(ZoneInfo(timezone))
+            end_date = datetime.fromisoformat(
+                convert_to_iso_format(end_date_str, location)
+            ).astimezone(ZoneInfo(timezone))
 
             return CalendarEvent(
                 start=start_date,
@@ -70,14 +87,20 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
         if self.coordinator.data["on_vacation"]:
             start_date_str = self.coordinator.data["start_date"]
             end_date_str = self.coordinator.data["end_date"]
-            location = self.coordinator.data["location"]  # Localisation pour déterminer le fuseau horaire
+            location = self.coordinator.data[
+                "location"
+            ]  # Localisation pour déterminer le fuseau horaire
 
             # Récupérer le fuseau horaire correspondant à la localisation
             timezone = get_timezone(location)  # Utiliser le fuseau horaire dynamique
 
             # Convertir les dates en datetime et appliquer le fuseau horaire
-            event_start = datetime.fromisoformat(convert_to_iso_format(start_date_str, location)).astimezone(ZoneInfo(timezone))
-            event_end = datetime.fromisoformat(convert_to_iso_format(end_date_str, location)).astimezone(ZoneInfo(timezone))
+            event_start = datetime.fromisoformat(
+                convert_to_iso_format(start_date_str, location)
+            ).astimezone(ZoneInfo(timezone))
+            event_end = datetime.fromisoformat(
+                convert_to_iso_format(end_date_str, location)
+            ).astimezone(ZoneInfo(timezone))
 
             if start_date <= event_end and end_date >= event_start:
                 event = CalendarEvent(
@@ -96,6 +119,7 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
             manufacturer="Master13011",
             model="API",
         )
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
