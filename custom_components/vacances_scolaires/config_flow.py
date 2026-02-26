@@ -1,5 +1,4 @@
 """Config flow for Vacances Scolaires integration."""
-
 from __future__ import annotations
 
 from typing import Any
@@ -114,5 +113,4 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         from .options_flow import VacancesScolairesOptionsFlowHandler
-
-        return VacancesScolairesOptionsFlowHandler(config_entry
+        return VacancesScolairesOptionsFlowHandler(config_entry)
