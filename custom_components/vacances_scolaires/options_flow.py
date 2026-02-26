@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Any
 import voluptuous as vol
 import logging
-from homeassistant.config_entries import OptionsFlow, ConfigEntry
-from homeassistant.data_entry_flow import FlowResult, FlowContext
+from homeassistant.config_entries import OptionsFlow, ConfigEntry, ConfigFlowResult
 
 from .const import (
     CONF_UPDATE_INTERVAL,
@@ -19,12 +18,11 @@ class VacancesScolairesOptionsFlowHandler(OptionsFlow):
     """Handle the options flow for Vacances Scolaires."""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
-        """No need to store config_entry, already available via self.config_entry."""
         super().__init__()
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult[FlowContext, str]:
+    ) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
             old_options = self.config_entry.options

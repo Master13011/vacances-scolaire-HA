@@ -1,4 +1,3 @@
-"""Config flow for Vacances Scolaires integration."""
 from __future__ import annotations
 
 from typing import Any
@@ -6,8 +5,12 @@ from homeassistant.core import callback
 import voluptuous as vol
 import logging
 
-from homeassistant.config_entries import ConfigFlow, ConfigEntry, OptionsFlow
-from homeassistant.data_entry_flow import FlowResult, FlowContext
+from homeassistant.config_entries import (
+    ConfigFlow,
+    ConfigEntry,
+    OptionsFlow,
+    ConfigFlowResult,
+)
 
 from .const import (
     DOMAIN,
@@ -32,7 +35,7 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult[FlowContext, str]:
+    ) -> ConfigFlowResult:
         """Handle the initial step."""
         if user_input is None:
             return self.async_show_form(
@@ -53,7 +56,7 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_location(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult[FlowContext, str]:
+    ) -> ConfigFlowResult:
         """Handle the location step."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -79,7 +82,7 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def async_step_zone(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult[FlowContext, str]:
+    ) -> ConfigFlowResult:
         """Handle the zone step."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -113,4 +116,5 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         from .options_flow import VacancesScolairesOptionsFlowHandler
+
         return VacancesScolairesOptionsFlowHandler(config_entry)
