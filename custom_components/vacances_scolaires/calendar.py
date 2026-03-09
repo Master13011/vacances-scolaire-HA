@@ -3,6 +3,7 @@
 from __future__ import annotations
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -127,12 +128,19 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
         raise NotImplementedError
 
     async def async_update_event(
-        self, uid: str, event: dict[str, Any], recurrence_id: str | None = None, recurrence_range: str | None = None
+        self,
+        uid: str,
+        event: dict[str, Any],
+        recurrence_id: str | None = None,
+        recurrence_range: str | None = None
     ) -> None:
         raise NotImplementedError
 
     async def async_delete_event(
-        self, uid: str, recurrence_id: str | None = None, recurrence_range: str | None = None
+        self,
+        uid: str,
+        recurrence_id: str | None = None,
+        recurrence_range: str | None = None
     ) -> None:
         raise NotImplementedError
 
