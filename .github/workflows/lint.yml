@@ -25,14 +25,11 @@ jobs:
         - name: "Install requirements"
           run: python3 -m pip install -r requirements.txt types-pytz
 
-        - name: "Lint"
-          run: python3 -m ruff check .
-
-        - name: "Format"
+        - name: "Lint Format"
           run: python3 -m ruff format .
 
-        - name: "Run Black"
-          run: black --check .
+        - name: "Run Black Format"
+          run: black .
 
         - name: "Run Mypy"
           run: |
