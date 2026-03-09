@@ -15,7 +15,7 @@ from .const import DOMAIN
 from .coordinator import get_timezone
 
 # Fonction pour convertir la date dans le bon format et ajouter un fuseau horaire
-def convert_to_iso_format(date_str: str) -> str:
+def convert_to_iso_format(date_str: str, location: str | None = None) -> str:
     # Créer un dictionnaire pour les mois en français
     mois = {
         "janvier": "01",
@@ -123,13 +123,17 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
             model="API",
         )
 
-    async def async_create_event(self, event: CalendarEvent) -> str:
+    async def async_create_event(self, **kwargs: Any) -> None:
         raise NotImplementedError
 
-    async def async_update_event(self, event_id: str, event: CalendarEvent) -> None:
+    async def async_update_event(
+        self, uid: str, event: dict[str, Any], recurrence_id: str | None = None, recurrence_range: str | None = None
+    ) -> None:
         raise NotImplementedError
 
-    async def async_delete_event(self, event_id: str) -> None:
+    async def async_delete_event(
+        self, uid: str, recurrence_id: str | None = None, recurrence_range: str | None = None
+    ) -> None:
         raise NotImplementedError
 
 
