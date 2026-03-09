@@ -1,10 +1,14 @@
-from datetime import timedelta, date, datetime
-import logging
-from typing import Any
+"""Vacances Scolaires data coordinator."""
+
+from __future__ import annotations
+from datetime import date, datetime, timedelta
 import asyncio
-from zoneinfo import ZoneInfo
-import aiohttp
+import logging
 import unicodedata
+from zoneinfo import ZoneInfo
+from typing import Any
+
+import aiohttp
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -120,7 +124,7 @@ class VacancesScolairesDataUpdateCoordinator(DataUpdateCoordinator):
         verify_ssl = self.entry.options.get(
             CONF_VERIFY_SSL, self.config.get(CONF_VERIFY_SSL, True)
         )
-        _LOGGER.debug(f"Appel API avec verify_ssl={verify_ssl}")
+        _LOGGER.debug("Appel API avec verify_ssl=%s", verify_ssl)
 
         today_str = date.today().isoformat()
         config_type = self.config.get(CONF_CONFIG_TYPE, "location")
@@ -151,7 +155,7 @@ class VacancesScolairesDataUpdateCoordinator(DataUpdateCoordinator):
                         data = await response.json()
 
                         if not data.get("results"):
-                            raise UpdateFailed("No data received from API")
+                            raise UpdateFailed("No data received from API") from None
 
                         results = data.get("results", [])
 
@@ -212,6 +216,6 @@ class VacancesScolairesDataUpdateCoordinator(DataUpdateCoordinator):
                             "on_vacation": on_vacation,
                         }
         except aiohttp.ClientError as err:
-            raise UpdateFailed(f"Error communicating with API: {err}")
-        except asyncio.TimeoutError:
-            raise UpdateFailed("Timeout fetching Vacances Scolaires data")
+            raise UpdateFailed(f"Error communicating with API: {err}") from err
+        except asyncio.TimeoutError  as exc:
+            raise UpdateFailed("Timeout fetching Vacances Scolaires data") from exc

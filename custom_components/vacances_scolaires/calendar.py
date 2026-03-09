@@ -1,18 +1,21 @@
+"""Vacances Scolaires Calendar platform."""
+
 from __future__ import annotations
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.components.calendar import CalendarEntity, CalendarEvent
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.components.calendar import CalendarEntity, CalendarEvent
+
 from .const import DOMAIN
 from .coordinator import get_timezone
 
-
 # Fonction pour convertir la date dans le bon format et ajouter un fuseau horaire
-def convert_to_iso_format(date_str, location):
+def convert_to_iso_format(date_str: str) -> str:
     # Créer un dictionnaire pour les mois en français
     mois = {
         "janvier": "01",
@@ -45,7 +48,7 @@ def convert_to_iso_format(date_str, location):
 class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
     """Vacances Scolaires Calendar class."""
 
-    def __init__(self, coordinator, config_entry):
+    def __init__(self, coordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._attr_name = f"Vacances Scolaires {config_entry.title}"
         self._attr_unique_id = f"{config_entry.entry_id}_calendar"
@@ -119,6 +122,15 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
             manufacturer="Master13011",
             model="API",
         )
+
+    async def async_create_event(self, event: CalendarEvent) -> str:
+        raise NotImplementedError
+
+    async def async_update_event(self, event_id: str, event: CalendarEvent) -> None:
+        raise NotImplementedError
+
+    async def async_delete_event(self, event_id: str) -> None:
+        raise NotImplementedError
 
 
 async def async_setup_entry(
