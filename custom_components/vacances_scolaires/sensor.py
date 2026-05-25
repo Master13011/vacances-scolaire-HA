@@ -88,6 +88,8 @@ class VacancesScolairesSensor(CoordinatorEntity, SensorEntity):
             zone = entry.data.get(CONF_ZONE, "Unknown")
             self._attr_unique_id = f"{DOMAIN}_{config_type}_{zone}"
             self._attr_name = f"Vacances Scolaires {zone}"
+            
+        self._attr_icon = "mdi:school"
         self._attr_attribution = ATTRIBUTION
 
     @property
@@ -134,6 +136,8 @@ class VacancesScolairesAujourdHuiSensor(CoordinatorEntity, SensorEntity):
             zone = entry.data.get(CONF_ZONE, "Unknown")
             self._attr_unique_id = f"{DOMAIN}_{config_type}_{zone}_today"
             self._attr_name = f"Vacances Scolaires Aujourd'hui {zone}"
+
+        self._attr_icon = "mdi:calendar-today"
         self._attr_attribution = ATTRIBUTION
 
     async def async_added_to_hass(self) -> None:
@@ -208,6 +212,8 @@ class VacancesScolairesDemainSensor(CoordinatorEntity, SensorEntity):
             zone = entry.data.get(CONF_ZONE, "Unknown")
             self._attr_unique_id = f"{DOMAIN}_{config_type}_{zone}_tomorrow"
             self._attr_name = f"Vacances Scolaires Demain {zone}"
+
+        self._attr_icon = "mdi:calendar-arrow-right"
         self._attr_attribution = ATTRIBUTION
 
     async def async_added_to_hass(self) -> None:
