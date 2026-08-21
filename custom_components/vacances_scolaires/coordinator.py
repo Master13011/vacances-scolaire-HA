@@ -7,6 +7,7 @@ import logging
 import unicodedata
 from zoneinfo import ZoneInfo
 from typing import Any
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 import aiohttp
 
@@ -145,13 +146,14 @@ class VacancesScolairesDataUpdateCoordinator(DataUpdateCoordinator):
             raise UpdateFailed("Invalid configuration type")
 
         try:
+            session = async_get_clientsession(self.hass)
             async with asyncio.timeout(10):
-                async with aiohttp.ClientSession() as session:
                     async with session.get(api_url, ssl=verify_ssl) as response:
                         if response.status != 200:
                             raise UpdateFailed(
                                 f"Error communicating with API: {response.status}"
                             )
+
                         data = await response.json()
 
                         if not data.get("results"):
