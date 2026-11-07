@@ -1,5 +1,5 @@
 # vacances-scolaire-HA
-![Home Assistant](https://img.shields.io/badge/Home--Assistant-2024.5+-blue?logo=home-assistant)
+![Home Assistant](https://img.shields.io/badge/Home--Assistant-2025.8+-blue?logo=home-assistant)
 ![Custom Component](https://img.shields.io/badge/Custom%20Component-oui-orange)
 ![Licence MIT](https://img.shields.io/badge/Licence-MIT-green)
 
@@ -21,7 +21,6 @@ Cette intégration personnalisée pour Home Assistant permet aux utilisateurs de
 - **Attributs détaillés** : Fournit des informations supplémentaires telles que les dates de début et de fin des vacances.
 - **Ajout calendrier** : Vous avez la possibilité d'ajouter un calendrier
 - **Ajout capteur** : Vacances Scolaires Aujourd’Hui et Demain
-- **Ajout SSL_Verify** : Permet de désactiver la vérification du certificat
   
 ## Installation
 

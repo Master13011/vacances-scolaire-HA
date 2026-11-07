@@ -1,30 +1,36 @@
 """Vacances Scolaires data coordinator."""
 
 from __future__ import annotations
-from datetime import date, datetime, timedelta
-import asyncio
+
+from datetime import datetime, timedelta
 import logging
-import unicodedata
-from zoneinfo import ZoneInfo
 from typing import Any
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from zoneinfo import ZoneInfo
 
-import aiohttp
-
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import (
-    DOMAIN,
-    CONF_LOCATION,
-    CONF_ZONE,
-    CONF_CONFIG_TYPE,
-    CONF_UPDATE_INTERVAL,
-    CONF_VERIFY_SSL,
+from .api import (
+    VacancesScolairesError,
+    async_fetch_records,
 )
+from .const import (
+    CONF_CONFIG_TYPE,
+    CONF_LOCATION,
+    CONF_UPDATE_INTERVAL,
+    CONF_ZONE,
+    CONFIG_TYPE_LOCATION,
+    CONFIG_TYPE_ZONE,
+    DEFAULT_UPDATE_INTERVAL,
+    DOMAIN,
+)
+from .util import normalize_text, sanitize_update_interval
 
 _LOGGER = logging.getLogger(__name__)
+
+type VacancesScolairesConfigEntry = ConfigEntry[VacancesScolairesDataUpdateCoordinator]
 
 
 def get_timezone(location: str) -> str:
@@ -79,145 +85,96 @@ def traduire_mois(date_str: str) -> str:
     return date_str
 
 
-def normalize_population(pop: str | None) -> str:
-    """Normalise le champ population (minuscules + sans accents)."""
-    if not pop:
-        return ""
-    pop_norm = (
-        unicodedata.normalize("NFD", pop).encode("ascii", "ignore").decode("utf-8")
-    )
-    return pop_norm.lower()
-
-
-class VacancesScolairesDataUpdateCoordinator(DataUpdateCoordinator):
+class VacancesScolairesDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Class to manage fetching Vacances Scolaires data."""
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        """Initialize the data updater."""
-        self.entry = entry  # Stocker la ConfigEntry
-        self.config = entry.data  # Données de configuration initiales
-        self.options = entry.options  # Options modifiables après configuration
+    config_entry: VacancesScolairesConfigEntry
 
-        # Récupération dynamique de l'intervalle (options priorisées sur data)
-        hours_val = (
-            self.options.get(CONF_UPDATE_INTERVAL)
-            if self.options and CONF_UPDATE_INTERVAL in self.options
-            else self.config.get(CONF_UPDATE_INTERVAL, 12)
+    def __init__(
+        self, hass: HomeAssistant, config_entry: VacancesScolairesConfigEntry
+    ) -> None:
+        """Initialize the data updater."""
+        # Options take precedence over the initial data
+        hours = config_entry.options.get(
+            CONF_UPDATE_INTERVAL,
+            config_entry.data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
         )
 
-        if hours_val is None:
-            hours_int = 12
-        else:
-            try:
-                hours_int = int(hours_val)
-            except (ValueError, TypeError):
-                _LOGGER.warning(
-                    f"Valeur d'intervalle invalide ({hours_val}), utilisation de 12 heures par défaut"
-                )
-                hours_int = 12
-
-        update_interval = timedelta(hours=hours_int)
-
-        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=update_interval)
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            config_entry=config_entry,
+            update_interval=timedelta(hours=sanitize_update_interval(hours)),
+        )
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from API endpoint."""
-        verify_ssl = self.entry.options.get(
-            CONF_VERIFY_SSL, self.config.get(CONF_VERIFY_SSL, True)
-        )
-        _LOGGER.debug("Appel API avec verify_ssl=%s", verify_ssl)
+        data = self.config_entry.data
+        config_type = data.get(CONF_CONFIG_TYPE, CONFIG_TYPE_LOCATION)
 
-        today_str = date.today().isoformat()
-        config_type = self.config.get(CONF_CONFIG_TYPE, "location")
-
-        if config_type == "location":
-            location = self.config.get(CONF_LOCATION)
-            api_url = (
-                f"https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-calendrier-scolaire/"
-                f"records?where=end_date%3E%3Ddate%27{today_str}%27&order_by=start_date%20ASC&limit=2&refine=location%3A{location}"
-            )
-        elif config_type == "zone":
-            zone = self.config.get(CONF_ZONE)
-            api_url = (
-                f"https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-calendrier-scolaire/"
-                f"records?where=end_date%3E%3Ddate%27{today_str}%27&order_by=start_date%20ASC&limit=2&refine=zones%3A{zone}"
-            )
+        if config_type == CONFIG_TYPE_LOCATION:
+            value = data.get(CONF_LOCATION)
+        elif config_type == CONFIG_TYPE_ZONE:
+            value = data.get(CONF_ZONE)
         else:
             raise UpdateFailed("Invalid configuration type")
 
         try:
-            session = async_get_clientsession(self.hass)
-            async with asyncio.timeout(10):
-                    async with session.get(api_url, ssl=verify_ssl) as response:
-                        if response.status != 200:
-                            raise UpdateFailed(
-                                f"Error communicating with API: {response.status}"
-                            )
+            results = await async_fetch_records(
+                async_get_clientsession(self.hass), config_type, value or ""
+            )
+        except VacancesScolairesError as err:
+            raise UpdateFailed(str(err)) from err
 
-                        data = await response.json()
+        # Filtrer pour prioriser Élèves
+        eleves = [
+            r for r in results if normalize_text(r.get("population")) == "eleves"
+        ]
+        tous = [r for r in results if r.get("population") == "-"]
 
-                        if not data.get("results"):
-                            raise UpdateFailed("No data received from API") from None
+        if eleves:
+            result = eleves[0]
+        elif tous:
+            result = tous[0]
+        else:
+            # fallback, si vraiment rien trouvé
+            result = results[0]
 
-                        results = data.get("results", [])
+        # Parse dates en datetime avec timezone UTC
+        start_date_raw = datetime.fromisoformat(result["start_date"]).replace(
+            tzinfo=ZoneInfo("UTC")
+        )
+        end_date_raw = datetime.fromisoformat(result["end_date"]).replace(
+            tzinfo=ZoneInfo("UTC")
+        )
 
-                        # Filtrer pour prioriser Élèves
-                        eleves = [
-                            r
-                            for r in results
-                            if normalize_population(r.get("population")) == "eleves"
-                        ]
-                        tous = [r for r in results if r.get("population") == "-"]
+        today = datetime.now(ZoneInfo("UTC")).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        on_vacation = start_date_raw <= today <= end_date_raw
 
-                        if eleves:
-                            result = eleves[0]
-                        elif tous:
-                            result = tous[0]
-                        else:
-                            # fallback, si vraiment rien trouvé
-                            result = results[0] if results else None
+        state = (
+            f"{result['zones']} - Holidays"
+            if on_vacation
+            else f"{result['zones']} - Work"
+        )
 
-                        if not result:
-                            raise UpdateFailed("No suitable vacation data found")
+        # Formatage des dates traduites
+        start_date_formatted = traduire_mois(
+            start_date_raw.strftime("%d %B %Y à %H:%M:%S %Z")
+        )
+        end_date_formatted = traduire_mois(
+            end_date_raw.strftime("%d %B %Y à %H:%M:%S %Z")
+        )
 
-                        # Parse dates en datetime avec timezone UTC
-                        start_date_raw = datetime.fromisoformat(
-                            result["start_date"]
-                        ).replace(tzinfo=ZoneInfo("UTC"))
-                        end_date_raw = datetime.fromisoformat(
-                            result["end_date"]
-                        ).replace(tzinfo=ZoneInfo("UTC"))
-
-                        today = datetime.now(ZoneInfo("UTC")).replace(
-                            hour=0, minute=0, second=0, microsecond=0
-                        )
-                        on_vacation = start_date_raw <= today <= end_date_raw
-
-                        state = (
-                            f"{result['zones']} - Holidays"
-                            if on_vacation
-                            else f"{result['zones']} - Work"
-                        )
-
-                        # Formatage des dates traduites
-                        start_date_formatted = traduire_mois(
-                            start_date_raw.strftime("%d %B %Y à %H:%M:%S %Z")
-                        )
-                        end_date_formatted = traduire_mois(
-                            end_date_raw.strftime("%d %B %Y à %H:%M:%S %Z")
-                        )
-
-                        return {
-                            "state": state,
-                            "start_date": start_date_formatted,
-                            "end_date": end_date_formatted,
-                            "description": result["description"],
-                            "location": result.get("location"),
-                            "zone": result.get("zones"),
-                            "annee_scolaire": result.get("annee_scolaire"),
-                            "on_vacation": on_vacation,
-                        }
-        except aiohttp.ClientError as err:
-            raise UpdateFailed(f"Error communicating with API: {err}") from err
-        except asyncio.TimeoutError  as exc:
-            raise UpdateFailed("Timeout fetching Vacances Scolaires data") from exc
+        return {
+            "state": state,
+            "start_date": start_date_formatted,
+            "end_date": end_date_formatted,
+            "description": result["description"],
+            "location": result.get("location"),
+            "zone": result.get("zones"),
+            "annee_scolaire": result.get("annee_scolaire"),
+            "on_vacation": on_vacation,
+        }

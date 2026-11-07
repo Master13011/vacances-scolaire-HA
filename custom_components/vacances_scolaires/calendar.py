@@ -5,15 +5,16 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
-from .coordinator import get_timezone
+from .coordinator import (
+    VacancesScolairesConfigEntry,
+    VacancesScolairesDataUpdateCoordinator,
+    get_timezone,
+)
+from .entity import VacancesScolairesEntity, get_entry_target
 
 # Fonction pour convertir la date dans le bon format et ajouter un fuseau horaire
 def convert_to_iso_format(date_str: str, location: str | None = None) -> str:
@@ -46,14 +47,17 @@ def convert_to_iso_format(date_str: str, location: str | None = None) -> str:
     return iso_format_date
 
 
-class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
+class VacancesScolairesCalendar(VacancesScolairesEntity, CalendarEntity):
     """Vacances Scolaires Calendar class."""
 
-    def __init__(self, coordinator, config_entry: ConfigEntry) -> None:
-        super().__init__(coordinator)
-        self._attr_name = f"Vacances Scolaires {config_entry.title}"
-        self._attr_unique_id = f"{config_entry.entry_id}_calendar"
-        self.entry_id = config_entry.entry_id
+    def __init__(self, coordinator: VacancesScolairesDataUpdateCoordinator) -> None:
+        # The unique_id is unchanged so that existing calendars are kept.
+        # The device name ("Vacances Scolaires") is prepended by Home
+        # Assistant, which gives "Vacances Scolaires Paris".
+        entry = coordinator.config_entry
+        super().__init__(coordinator, f"{entry.entry_id}_calendar")
+        _, target = get_entry_target(entry)
+        self._attr_name = target
 
     @property
     def event(self) -> CalendarEvent | None:
@@ -115,15 +119,6 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
                 events.append(event)
         return events
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={(DOMAIN, self.entry_id)},
-            name="Vacances Scolaires",
-            manufacturer="Master13011",
-            model="API",
-        )
-
     async def async_create_event(self, **kwargs: Any) -> None:
         raise NotImplementedError
 
@@ -147,9 +142,8 @@ class VacancesScolairesCalendar(CoordinatorEntity, CalendarEntity):
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    entry: VacancesScolairesConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Vacances Scolaires Calendar platform."""
-    coordinator = hass.data[DOMAIN][config_entry.entry_id]
-    async_add_entities([VacancesScolairesCalendar(coordinator, config_entry)], True)
+    async_add_entities([VacancesScolairesCalendar(entry.runtime_data)])
