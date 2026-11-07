@@ -157,7 +157,7 @@ class VacancesScolairesAujourdHuiSensor(VacancesScolairesDaySensor):
 
     _day_offset = 0
     _unique_id_suffix = "_today"
-    _attr_translation_key = "today"
+    _attr_name = "Aujourd'hui"
     _attr_icon = "mdi:calendar-today"
 
 
@@ -166,5 +166,5 @@ class VacancesScolairesDemainSensor(VacancesScolairesDaySensor):
 
     _day_offset = 1
     _unique_id_suffix = "_tomorrow"
-    _attr_translation_key = "tomorrow"
+    _attr_name = "Demain"
     _attr_icon = "mdi:calendar-arrow-right"
