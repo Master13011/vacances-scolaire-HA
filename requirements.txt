@@ -7,3 +7,4 @@ ruff
 black
 mypy
 pylint
+pytest-homeassistant-custom-component

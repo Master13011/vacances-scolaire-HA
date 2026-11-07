@@ -27,6 +27,7 @@ from .api import (
     VacancesScolairesNoDataError,
     async_fetch_locations,
     async_fetch_records,
+    async_fetch_zones,
 )
 from .const import (
     CONF_CONFIG_TYPE,
@@ -52,8 +53,10 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize the flow."""
-        # None = not fetched yet, [] = API unavailable (free text fallback)
+        # None = not fetched yet, [] = API unavailable (fallback to free text
+        # for locations, to the built-in list for zones)
         self._locations: list[str] | None = None
+        self._zones: list[str] | None = None
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -162,6 +165,17 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the zone step."""
+        if self._zones is None:
+            try:
+                self._zones = await async_fetch_zones(
+                    async_get_clientsession(self.hass)
+                )
+            except VacancesScolairesError as err:
+                _LOGGER.debug("Cannot fetch the zones list: %s", err)
+                self._zones = []
+
+        zones = self._zones or ZONE_OPTIONS
+
         if user_input is not None:
             zone = user_input[CONF_ZONE]
             await self.async_set_unique_id(
@@ -177,8 +191,12 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="zone",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_ZONE, default=ZONE_OPTIONS[0]): vol.In(
-                        ZONE_OPTIONS
+                    vol.Required(CONF_ZONE, default=zones[0]): SelectSelector(
+                        SelectSelectorConfig(
+                            options=zones,
+                            mode=SelectSelectorMode.DROPDOWN,
+                            custom_value=False,
+                        )
                     ),
                     vol.Required(
                         CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL

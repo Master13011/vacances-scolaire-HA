@@ -8,7 +8,7 @@ from typing import Any
 
 import aiohttp
 
-from .const import CONFIG_TYPE_LOCATION, CONFIG_TYPE_ZONE
+from .const import CONFIG_TYPE_LOCATION, CONFIG_TYPE_ZONE, ZONE_OPTIONS
 
 API_URL = (
     "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/"
@@ -60,24 +60,45 @@ async def _async_get_json(
         ) from err
 
 
-async def async_fetch_locations(session: aiohttp.ClientSession) -> list[str]:
-    """Return the sorted list of locations (academies) known by the API."""
+async def _async_fetch_distinct(
+    session: aiohttp.ClientSession, field: str
+) -> list[str]:
+    """Return the distinct, non-empty values of a dataset field."""
     data = await _async_get_json(
         session,
-        {"select": "location", "group_by": "location", "limit": "100"},
-        "locations",
+        {"select": field, "group_by": field, "limit": "100"},
+        field,
     )
     results = data.get("results") if isinstance(data, dict) else None
-    locations = {
-        r["location"].strip()
+    values = {
+        r[field].strip()
         for r in results or []
-        if isinstance(r, dict)
-        and isinstance(r.get("location"), str)
-        and r["location"].strip()
+        if isinstance(r, dict) and isinstance(r.get(field), str) and r[field].strip()
     }
-    if not locations:
-        raise VacancesScolairesNoDataError("No location returned by the API")
-    return sorted(locations, key=str.casefold)
+    if not values:
+        raise VacancesScolairesNoDataError(f"No {field} returned by the API")
+    return sorted(values, key=str.casefold)
+
+
+async def async_fetch_locations(session: aiohttp.ClientSession) -> list[str]:
+    """Return the sorted list of locations (academies) known by the API."""
+    return await _async_fetch_distinct(session, "location")
+
+
+async def async_fetch_zones(session: aiohttp.ClientSession) -> list[str]:
+    """Return the list of zones known by the API.
+
+    Zones listed in ``ZONE_OPTIONS`` come first, in that order (Zone A, B, C,
+    Corse, overseas...), followed by any new zone alphabetically.
+    """
+    zones = await _async_fetch_distinct(session, "zones")
+    return sorted(
+        zones,
+        key=lambda z: (
+            ZONE_OPTIONS.index(z) if z in ZONE_OPTIONS else len(ZONE_OPTIONS),
+            z.casefold(),
+        ),
+    )
 
 
 async def async_fetch_records(
