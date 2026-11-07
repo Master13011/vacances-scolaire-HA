@@ -1,0 +1,77 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "School holidays configuration",
+        "description": "Choose how to select the school calendar.",
+        "data": {
+          "config_type": "Configuration type"
+        }
+      },
+      "location": {
+        "title": "Configuration by location",
+        "description": "Enter the academy name as it appears in the official calendar (for example Paris, Bordeaux or Aix-Marseille).",
+        "data": {
+          "location": "Location",
+          "update_interval": "Update interval (hours, 1 to 168)",
+          "create_calendar": "Create a calendar"
+        }
+      },
+      "zone": {
+        "title": "Configuration by zone",
+        "description": "Choose the school zone.",
+        "data": {
+          "zone": "Zone",
+          "update_interval": "Update interval (hours, 1 to 168)",
+          "create_calendar": "Create a calendar"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the education.gouv.fr API",
+      "location_not_found": "No school calendar found for this location. Check the spelling."
+    },
+    "abort": {
+      "already_configured": "This configuration already exists"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "School holidays options",
+        "data": {
+          "update_interval": "Update interval (hours, 1 to 168)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "config_type": {
+      "options": {
+        "location": "By location (academy)",
+        "zone": "By zone"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "vacances_scolaires": {
+        "state_attributes": {
+          "start_date": "Start date",
+          "end_date": "End date",
+          "description": "Description",
+          "location": "Location",
+          "zone": "Zone",
+          "année_scolaire": "School year",
+          "en_vacances": "On vacation"
+        }
+      },
+      "today": {
+        "name": "Today"
+      },
+      "tomorrow": {
+        "name": "Tomorrow"
+      }
+    }
+  }
+}

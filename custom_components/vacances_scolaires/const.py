@@ -1,5 +1,7 @@
 """Constants for the Vacances Scolaires integration."""
 
+from homeassistant.const import Platform
+
 DOMAIN = "vacances_scolaires"
 
 CONF_LOCATION = "location"
@@ -7,12 +9,16 @@ CONF_ZONE = "zone"
 CONF_UPDATE_INTERVAL = "update_interval"
 CONF_CONFIG_TYPE = "config_type"
 CONF_CREATE_CALENDAR = "create_calendar"
-CONF_VERIFY_SSL = "verify_ssl"
+
+CONFIG_TYPE_LOCATION = "location"
+CONFIG_TYPE_ZONE = "zone"
 
 DEFAULT_LOCATION = ""
 DEFAULT_UPDATE_INTERVAL = 12
+MIN_UPDATE_INTERVAL = 1
+MAX_UPDATE_INTERVAL = 168
 
-PLATFORMS = ["sensor"]
+PLATFORMS = [Platform.SENSOR]
 
 ATTRIBUTION = "Data provided by education.gouv.fr"
 

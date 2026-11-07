@@ -1,47 +1,45 @@
+"""Sensor platform of the Vacances Scolaires integration."""
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.event import async_track_time_change
 
 from .const import (
-    DOMAIN,
-    CONF_LOCATION,
-    CONF_ZONE,
-    CONF_CONFIG_TYPE,
-    ATTRIBUTION,
-    ATTR_START_DATE,
-    ATTR_END_DATE,
-    ATTR_DESCRIPTION,
-    ATTR_LOCATION,
-    ATTR_ZONE,
     ATTR_ANNEE_SCOLAIRE,
+    ATTR_DESCRIPTION,
+    ATTR_END_DATE,
     ATTR_EN_VACANCES,
+    ATTR_LOCATION,
+    ATTR_START_DATE,
+    ATTR_ZONE,
+    DOMAIN,
 )
-from .coordinator import VacancesScolairesDataUpdateCoordinator
+from .coordinator import (
+    VacancesScolairesConfigEntry,
+    VacancesScolairesDataUpdateCoordinator,
+)
+from .entity import VacancesScolairesEntity, get_entry_target
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: VacancesScolairesConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the Vacances Scolaires sensor."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    """Set up the Vacances Scolaires sensors."""
+    coordinator = entry.runtime_data
     async_add_entities(
         [
-            VacancesScolairesSensor(coordinator, entry),
-            VacancesScolairesAujourdHuiSensor(coordinator, entry),
-            VacancesScolairesDemainSensor(coordinator, entry),
-        ],
-        True,
+            VacancesScolairesSensor(coordinator),
+            VacancesScolairesAujourdHuiSensor(coordinator),
+            VacancesScolairesDemainSensor(coordinator),
+        ]
     )
 
 
@@ -71,204 +69,102 @@ def convert_to_iso_format(date_str: str) -> str:
     return f"{year}-{month}-{day}T{time_str}"
 
 
-class VacancesScolairesSensor(CoordinatorEntity, SensorEntity):
-    """Representation of a Vacances Scolaires sensor."""
+class VacancesScolairesSensorBase(VacancesScolairesEntity, SensorEntity):
+    """Common behaviour of the Vacances Scolaires sensors."""
 
-    def __init__(
-        self, coordinator: VacancesScolairesDataUpdateCoordinator, entry: ConfigEntry
-    ) -> None:
-        super().__init__(coordinator)
-        self.entry = entry
-        config_type = entry.data.get(CONF_CONFIG_TYPE, "location")
-        if config_type == "location":
-            location = entry.data.get(CONF_LOCATION, "Unknown")
-            self._attr_unique_id = f"{DOMAIN}_{config_type}_{location}"
-            self._attr_name = f"Vacances Scolaires {location}"
-        else:
-            zone = entry.data.get(CONF_ZONE, "Unknown")
-            self._attr_unique_id = f"{DOMAIN}_{config_type}_{zone}"
-            self._attr_name = f"Vacances Scolaires {zone}"
-            
-        self._attr_icon = "mdi:school"
-        self._attr_attribution = ATTRIBUTION
+    # Suffix appended to the historical unique_id (kept unchanged so that
+    # existing entities are not recreated).
+    _unique_id_suffix = ""
+
+    def __init__(self, coordinator: VacancesScolairesDataUpdateCoordinator) -> None:
+        config_type, target = get_entry_target(coordinator.config_entry)
+        super().__init__(
+            coordinator,
+            f"{DOMAIN}_{config_type}_{target}{self._unique_id_suffix}",
+        )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        if not self.coordinator.data:
+            return {}
+        data = self.coordinator.data
+        return {
+            ATTR_START_DATE: data.get("start_date"),
+            ATTR_END_DATE: data.get("end_date"),
+            ATTR_DESCRIPTION: data.get("description"),
+            ATTR_LOCATION: data.get("location"),
+            ATTR_ZONE: data.get("zone"),
+            ATTR_ANNEE_SCOLAIRE: data.get("annee_scolaire"),
+            ATTR_EN_VACANCES: data.get("on_vacation"),
+        }
+
+
+class VacancesScolairesSensor(VacancesScolairesSensorBase):
+    """Main sensor: current or next school holidays."""
+
+    _attr_name = None  # use the device name
+    _attr_translation_key = "vacances_scolaires"
+    _attr_icon = "mdi:school"
 
     @property
     def native_value(self) -> str | None:
         return self.coordinator.data.get("state") if self.coordinator.data else None
 
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        if not self.coordinator.data:
-            return {}
-        return {
-            ATTR_START_DATE: self.coordinator.data.get("start_date"),
-            ATTR_END_DATE: self.coordinator.data.get("end_date"),
-            ATTR_DESCRIPTION: self.coordinator.data.get("description"),
-            ATTR_LOCATION: self.coordinator.data.get("location"),
-            ATTR_ZONE: self.coordinator.data.get("zone"),
-            ATTR_ANNEE_SCOLAIRE: self.coordinator.data.get("annee_scolaire"),
-            ATTR_EN_VACANCES: self.coordinator.data.get("on_vacation"),
-        }
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={(DOMAIN, self.entry.entry_id)},
-            name="Vacances Scolaires",
-            manufacturer="Master13011",
-            model="API",
+class VacancesScolairesDaySensor(VacancesScolairesSensorBase):
+    """Sensor telling whether a given day (today, tomorrow...) is a holiday."""
+
+    _day_offset = 0
+
+    async def async_added_to_hass(self) -> None:
+        """Register midnight update callback."""
+        await super().async_added_to_hass()
+
+        self.async_on_remove(
+            async_track_time_change(
+                self.hass,
+                self._handle_midnight_update,
+                hour=0,
+                minute=0,
+                second=5,
+            )
         )
 
-class VacancesScolairesAujourdHuiSensor(CoordinatorEntity, SensorEntity):
+    @callback
+    def _handle_midnight_update(self, now: datetime) -> None:
+        """Force state refresh at midnight."""
+        self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> str | None:
+        if not self.coordinator.data:
+            return None
+        start_date_str = self.coordinator.data.get("start_date")
+        end_date_str = self.coordinator.data.get("end_date")
+        if not isinstance(start_date_str, str) or not isinstance(end_date_str, str):
+            return None
+        try:
+            start_date = datetime.fromisoformat(convert_to_iso_format(start_date_str))
+            end_date = datetime.fromisoformat(convert_to_iso_format(end_date_str))
+        except ValueError:
+            return None
+        target = datetime.now() + timedelta(days=self._day_offset)
+        return "En vacances" if start_date <= target <= end_date else "Pas en vacances"
+
+
+class VacancesScolairesAujourdHuiSensor(VacancesScolairesDaySensor):
     """Sensor for 'Are we on vacation today?'."""
 
-    def __init__(
-        self, coordinator: VacancesScolairesDataUpdateCoordinator, entry: ConfigEntry
-    ) -> None:
-        super().__init__(coordinator)
-        self.entry = entry
-        config_type = entry.data.get(CONF_CONFIG_TYPE, "location")
-        if config_type == "location":
-            location = entry.data.get(CONF_LOCATION, "Unknown")
-            self._attr_unique_id = f"{DOMAIN}_{config_type}_{location}_today"
-            self._attr_name = f"Vacances Scolaires Aujourd'hui {location}"
-        else:
-            zone = entry.data.get(CONF_ZONE, "Unknown")
-            self._attr_unique_id = f"{DOMAIN}_{config_type}_{zone}_today"
-            self._attr_name = f"Vacances Scolaires Aujourd'hui {zone}"
+    _day_offset = 0
+    _unique_id_suffix = "_today"
+    _attr_translation_key = "today"
+    _attr_icon = "mdi:calendar-today"
 
-        self._attr_icon = "mdi:calendar-today"
-        self._attr_attribution = ATTRIBUTION
 
-    async def async_added_to_hass(self) -> None:
-        """Register midnight update callback."""
-        await super().async_added_to_hass()
-
-        self.async_on_remove(
-            async_track_time_change(
-                self.hass,
-                self._handle_midnight_update,
-                hour=0,
-                minute=0,
-                second=5,
-            )
-        )
-
-    @callback
-    def _handle_midnight_update(self, now: datetime) -> None:
-        """Force state refresh at midnight."""
-        self.async_write_ha_state()
-
-    @property
-    def native_value(self) -> str | None:
-        if not self.coordinator.data:
-            return None
-        start_date_str = self.coordinator.data.get("start_date")
-        end_date_str = self.coordinator.data.get("end_date")
-        if not isinstance(start_date_str, str) or not isinstance(end_date_str, str):
-            return None
-        start_date = datetime.fromisoformat(convert_to_iso_format(start_date_str))
-        end_date = datetime.fromisoformat(convert_to_iso_format(end_date_str))
-        today = datetime.now()
-        return "En vacances" if start_date <= today <= end_date else "Pas en vacances"
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        if not self.coordinator.data:
-            return {}
-        return {
-            ATTR_START_DATE: self.coordinator.data.get("start_date"),
-            ATTR_END_DATE: self.coordinator.data.get("end_date"),
-            ATTR_DESCRIPTION: self.coordinator.data.get("description"),
-            ATTR_LOCATION: self.coordinator.data.get("location"),
-            ATTR_ZONE: self.coordinator.data.get("zone"),
-            ATTR_ANNEE_SCOLAIRE: self.coordinator.data.get("annee_scolaire"),
-            ATTR_EN_VACANCES: self.coordinator.data.get("on_vacation"),
-        }
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={(DOMAIN, self.entry.entry_id)},
-            name="Vacances Scolaires",
-            manufacturer="Master13011",
-            model="API",
-        )
-
-class VacancesScolairesDemainSensor(CoordinatorEntity, SensorEntity):
+class VacancesScolairesDemainSensor(VacancesScolairesDaySensor):
     """Sensor for 'Are we on vacation tomorrow?'."""
 
-    def __init__(
-        self, coordinator: VacancesScolairesDataUpdateCoordinator, entry: ConfigEntry
-    ) -> None:
-        super().__init__(coordinator)
-        self.entry = entry
-        config_type = entry.data.get(CONF_CONFIG_TYPE, "location")
-        if config_type == "location":
-            location = entry.data.get(CONF_LOCATION, "Unknown")
-            self._attr_unique_id = f"{DOMAIN}_{config_type}_{location}_tomorrow"
-            self._attr_name = f"Vacances Scolaires Demain {location}"
-        else:
-            zone = entry.data.get(CONF_ZONE, "Unknown")
-            self._attr_unique_id = f"{DOMAIN}_{config_type}_{zone}_tomorrow"
-            self._attr_name = f"Vacances Scolaires Demain {zone}"
-
-        self._attr_icon = "mdi:calendar-arrow-right"
-        self._attr_attribution = ATTRIBUTION
-
-    async def async_added_to_hass(self) -> None:
-        """Register midnight update callback."""
-        await super().async_added_to_hass()
-
-        self.async_on_remove(
-            async_track_time_change(
-                self.hass,
-                self._handle_midnight_update,
-                hour=0,
-                minute=0,
-                second=5,
-            )
-        )
-
-    @callback
-    def _handle_midnight_update(self, now: datetime) -> None:
-        """Force state refresh at midnight."""
-        self.async_write_ha_state()
-
-    @property
-    def native_value(self) -> str | None:
-        if not self.coordinator.data:
-            return None
-        start_date_str = self.coordinator.data.get("start_date")
-        end_date_str = self.coordinator.data.get("end_date")
-        if not isinstance(start_date_str, str) or not isinstance(end_date_str, str):
-            return None
-        start_date = datetime.fromisoformat(convert_to_iso_format(start_date_str))
-        end_date = datetime.fromisoformat(convert_to_iso_format(end_date_str))
-        tomorrow = datetime.now() + timedelta(days=1)
-        return (
-            "En vacances" if start_date <= tomorrow <= end_date else "Pas en vacances"
-        )
-
-    @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        if not self.coordinator.data:
-            return {}
-        return {
-            ATTR_START_DATE: self.coordinator.data.get("start_date"),
-            ATTR_END_DATE: self.coordinator.data.get("end_date"),
-            ATTR_DESCRIPTION: self.coordinator.data.get("description"),
-            ATTR_LOCATION: self.coordinator.data.get("location"),
-            ATTR_ZONE: self.coordinator.data.get("zone"),
-            ATTR_ANNEE_SCOLAIRE: self.coordinator.data.get("annee_scolaire"),
-            ATTR_EN_VACANCES: self.coordinator.data.get("on_vacation"),
-        }
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={(DOMAIN, self.entry.entry_id)},
-            name="Vacances Scolaires",
-            manufacturer="Master13011",
-            model="API",
-        )
+    _day_offset = 1
+    _unique_id_suffix = "_tomorrow"
+    _attr_translation_key = "tomorrow"
+    _attr_icon = "mdi:calendar-arrow-right"

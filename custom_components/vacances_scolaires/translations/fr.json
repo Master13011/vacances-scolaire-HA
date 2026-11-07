@@ -1,77 +1,77 @@
 {
-    "config": {
-        "step": {
-            "user": {
-                "title": "Configuration des Vacances Scolaires",
-                "description": "Choisissez le type de configuration",
-                "data": {
-                    "config_type": "Type de configuration"
-                }
-            },
-            "location": {
-                "title": "Configuration par localisation",
-                "description": "Entrez les détails de la localisation",
-                "data": {
-                    "location": "Localisation",
-                    "update_interval": "Intervalle de mise à jour (en heures)",
-                    "create_calendar": "Créer un calendrier"
-                }
-            },
-            "zone": {
-                "title": "Configuration par zone",
-                "description": "Choisissez la zone scolaire",
-                "data": {
-                    "zone": "Zone",
-                    "update_interval": "Intervalle de mise à jour (en heures)",
-                    "create_calendar": "Créer un calendrier"
-                }
-            }
-        },
-        "error": {
-            "cannot_connect": "Échec de connexion",
-            "invalid_auth": "Authentification invalide",
-            "unknown": "Erreur inattendue",
-            "invalid_zone": "Zone non valide"
-        },
-        "abort": {
-            "already_configured": "Cette configuration existe déjà"
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configuration des Vacances Scolaires",
+        "description": "Choisissez le type de configuration",
+        "data": {
+          "config_type": "Type de configuration"
         }
+      },
+      "location": {
+        "title": "Configuration par localisation",
+        "description": "Entrez le nom de l'académie tel qu'il apparaît dans le calendrier officiel (par exemple Paris, Bordeaux ou Aix-Marseille).",
+        "data": {
+          "location": "Localisation",
+          "update_interval": "Intervalle de mise à jour (en heures, de 1 à 168)",
+          "create_calendar": "Créer un calendrier"
+        }
+      },
+      "zone": {
+        "title": "Configuration par zone",
+        "description": "Choisissez la zone scolaire",
+        "data": {
+          "zone": "Zone",
+          "update_interval": "Intervalle de mise à jour (en heures, de 1 à 168)",
+          "create_calendar": "Créer un calendrier"
+        }
+      }
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "Options des Vacances Scolaires",
-                "data": {
-                    "update_interval": "Intervalle de mise à jour (en heures)",
-                    "verify_ssl": "Vérifier le certificat SSL du serveur API"
-                }
-            }
-        },
-        "error": {
-            "cannot_connect": "Échec de connexion",
-            "invalid_auth": "Authentification invalide",
-            "unknown": "Erreur inattendue",
-            "location_required": "La localisation est requise lorsque le type est 'Localisation'",
-            "zone_required": "La zone est requise lorsque le type est 'Zone'"
-        }
+    "error": {
+      "cannot_connect": "Échec de connexion à l'API education.gouv.fr",
+      "location_not_found": "Aucun calendrier scolaire trouvé pour cette localisation. Vérifiez l'orthographe."
     },
-    "entity": {
-        "sensor": {
-            "vacances_scolaires": {
-                "state": {
-                    "holidays": "Vacances",
-                    "work": "École"
-                },
-                "state_attributes": {
-                    "start_date": "Date de début",
-                    "end_date": "Date de fin",
-                    "description": "Description",
-                    "location": "Localisation",
-                    "zone": "Zone",
-                    "année_scolaire": "Année scolaire",
-                    "en_vacances": "En vacances"
-                }
-            }
-        }
+    "abort": {
+      "already_configured": "Cette configuration existe déjà"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options des Vacances Scolaires",
+        "data": {
+          "update_interval": "Intervalle de mise à jour (en heures, de 1 à 168)"
+        }
+      }
+    }
+  },
+  "selector": {
+    "config_type": {
+      "options": {
+        "location": "Par localisation (académie)",
+        "zone": "Par zone"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "vacances_scolaires": {
+        "state_attributes": {
+          "start_date": "Date de début",
+          "end_date": "Date de fin",
+          "description": "Description",
+          "location": "Localisation",
+          "zone": "Zone",
+          "année_scolaire": "Année scolaire",
+          "en_vacances": "En vacances"
+        }
+      },
+      "today": {
+        "name": "Aujourd'hui"
+      },
+      "tomorrow": {
+        "name": "Demain"
+      }
+    }
+  }
 }
