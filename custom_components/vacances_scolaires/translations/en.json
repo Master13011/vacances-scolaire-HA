@@ -62,7 +62,6 @@
           "description": "Description",
           "location": "Location",
           "zone": "Zone",
-          "année_scolaire": "School year",
           "en_vacances": "On vacation"
         }
       },
