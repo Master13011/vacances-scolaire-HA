@@ -5,7 +5,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 
 from custom_components.vacances_scolaires.const import CONF_CREATE_CALENDAR, DOMAIN
 
@@ -49,8 +49,6 @@ async def test_calendar_is_off_outside_holidays(hass: HomeAssistant) -> None:
 async def test_calendar_and_sensors_share_the_same_device(
     hass: HomeAssistant,
 ) -> None:
-    from homeassistant.helpers import device_registry as dr
-
     entry = await _setup(hass, [make_record()])
     devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
     assert len(devices) == 1

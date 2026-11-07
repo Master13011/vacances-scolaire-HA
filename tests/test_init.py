@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 
 from custom_components.vacances_scolaires.api import (
     VacancesScolairesApiError,
@@ -141,15 +141,13 @@ async def test_zone_entities_keep_historical_names_and_ids(
 async def test_entities_belong_to_the_vacances_scolaires_device(
     hass: HomeAssistant,
 ) -> None:
-    from homeassistant.helpers import device_registry as dr
-
     entry = make_entry()
     await _setup(hass, entry, [make_record()])
-    device = dr.async_get(hass).async_get_device(
-        identifiers={(DOMAIN, entry.entry_id)}
-    )
-    assert device is not None
-    assert device.name == "Vacances Scolaires"
+    # async_get_device is deprecated: list the devices of the config entry
+    devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
+    assert len(devices) == 1
+    assert devices[0].name == "Vacances Scolaires"
+    assert (DOMAIN, entry.entry_id) in devices[0].identifiers
 
 
 async def test_states_while_on_vacation(hass: HomeAssistant) -> None:
