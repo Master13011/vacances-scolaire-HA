@@ -35,6 +35,51 @@ class VacancesScolairesNoDataError(VacancesScolairesError):
     """The API answered, but there is no record for this location/zone."""
 
 
+async def _async_get_json(
+    session: aiohttp.ClientSession, params: dict[str, str], context: str
+) -> Any:
+    """GET the records endpoint and return the decoded JSON body."""
+    try:
+        async with asyncio.timeout(API_TIMEOUT):
+            async with session.get(API_URL, params=params) as response:
+                if response.status == 400:
+                    # The API rejects values it cannot parse as a facet value
+                    raise VacancesScolairesNoDataError(f"Invalid query: {context}")
+                if response.status != 200:
+                    raise VacancesScolairesApiError(
+                        f"Error communicating with API: {response.status}"
+                    )
+                return await response.json()
+    except TimeoutError as err:
+        raise VacancesScolairesApiError(
+            "Timeout fetching Vacances Scolaires data"
+        ) from err
+    except (aiohttp.ClientError, ValueError) as err:
+        raise VacancesScolairesApiError(
+            f"Error communicating with API: {err}"
+        ) from err
+
+
+async def async_fetch_locations(session: aiohttp.ClientSession) -> list[str]:
+    """Return the sorted list of locations (academies) known by the API."""
+    data = await _async_get_json(
+        session,
+        {"select": "location", "group_by": "location", "limit": "100"},
+        "locations",
+    )
+    results = data.get("results") if isinstance(data, dict) else None
+    locations = {
+        r["location"].strip()
+        for r in results or []
+        if isinstance(r, dict)
+        and isinstance(r.get("location"), str)
+        and r["location"].strip()
+    }
+    if not locations:
+        raise VacancesScolairesNoDataError("No location returned by the API")
+    return sorted(locations, key=str.casefold)
+
+
 async def async_fetch_records(
     session: aiohttp.ClientSession,
     config_type: str,
@@ -59,27 +104,7 @@ async def async_fetch_records(
         "refine": f"{field}:{value}",
     }
 
-    try:
-        async with asyncio.timeout(API_TIMEOUT):
-            async with session.get(API_URL, params=params) as response:
-                if response.status == 400:
-                    # The API rejects values it cannot parse as a facet value
-                    raise VacancesScolairesNoDataError(
-                        f"Invalid value for {field}: {value}"
-                    )
-                if response.status != 200:
-                    raise VacancesScolairesApiError(
-                        f"Error communicating with API: {response.status}"
-                    )
-                data = await response.json()
-    except TimeoutError as err:
-        raise VacancesScolairesApiError(
-            "Timeout fetching Vacances Scolaires data"
-        ) from err
-    except (aiohttp.ClientError, ValueError) as err:
-        raise VacancesScolairesApiError(
-            f"Error communicating with API: {err}"
-        ) from err
+    data = await _async_get_json(session, params, f"{field}: {value}")
 
     results = data.get("results") if isinstance(data, dict) else None
     if not results:

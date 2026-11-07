@@ -23,7 +23,9 @@ from homeassistant.helpers.selector import (
 
 from .api import (
     VacancesScolairesApiError,
+    VacancesScolairesError,
     VacancesScolairesNoDataError,
+    async_fetch_locations,
     async_fetch_records,
 )
 from .const import (
@@ -47,6 +49,11 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Vacances Scolaires."""
 
     VERSION = 1
+
+    def __init__(self) -> None:
+        """Initialize the flow."""
+        # None = not fetched yet, [] = API unavailable (free text fallback)
+        self._locations: list[str] | None = None
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -79,15 +86,21 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle the location step."""
         errors: dict[str, str] = {}
+        session = async_get_clientsession(self.hass)
+
+        if self._locations is None:
+            try:
+                self._locations = await async_fetch_locations(session)
+            except VacancesScolairesError as err:
+                _LOGGER.debug("Cannot fetch the locations list: %s", err)
+                self._locations = []
 
         if user_input is not None:
             location = user_input[CONF_LOCATION].strip()
             try:
+                # Always checked, even with the dropdown (cheap and safe)
                 await async_fetch_records(
-                    async_get_clientsession(self.hass),
-                    CONFIG_TYPE_LOCATION,
-                    location,
-                    limit=1,
+                    session, CONFIG_TYPE_LOCATION, location, limit=1
                 )
             except VacancesScolairesNoDataError:
                 errors[CONF_LOCATION] = "location_not_found"
@@ -109,14 +122,27 @@ class VacancesScolairesConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
 
         defaults = user_input or {}
+        location_field: Any
+        if self._locations:
+            location_field = SelectSelector(
+                SelectSelectorConfig(
+                    options=self._locations,
+                    mode=SelectSelectorMode.DROPDOWN,
+                    custom_value=False,
+                )
+            )
+            default_location = defaults.get(CONF_LOCATION)
+            if default_location not in self._locations:
+                default_location = vol.UNDEFINED
+        else:
+            location_field = str
+            default_location = defaults.get(CONF_LOCATION, DEFAULT_LOCATION)
+
         return self.async_show_form(
             step_id="location",
             data_schema=vol.Schema(
                 {
-                    vol.Required(
-                        CONF_LOCATION,
-                        default=defaults.get(CONF_LOCATION, DEFAULT_LOCATION),
-                    ): str,
+                    vol.Required(CONF_LOCATION, default=default_location): location_field,
                     vol.Required(
                         CONF_UPDATE_INTERVAL,
                         default=defaults.get(

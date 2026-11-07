@@ -10,7 +10,7 @@
       },
       "location": {
         "title": "Configuration par localisation",
-        "description": "Entrez le nom de l'académie tel qu'il apparaît dans le calendrier officiel (par exemple Paris, Bordeaux ou Aix-Marseille).",
+        "description": "Sélectionnez l'académie, ou saisissez son nom tel qu'il apparaît dans le calendrier officiel si la liste est indisponible.",
         "data": {
           "location": "Localisation",
           "update_interval": "Intervalle de mise à jour (en heures, de 1 à 168)",
@@ -72,19 +72,10 @@
           "zone": {
             "name": "Zone"
           },
-          "année_scolaire": {
-            "name": "Année scolaire"
-          },
           "en_vacances": {
             "name": "En vacances"
           }
         }
-      },
-      "today": {
-        "name": "Aujourd'hui"
-      },
-      "tomorrow": {
-        "name": "Demain"
       }
     }
   }

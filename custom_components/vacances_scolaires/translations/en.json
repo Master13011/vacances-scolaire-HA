@@ -10,7 +10,7 @@
       },
       "location": {
         "title": "Configuration by location",
-        "description": "Enter the academy name as it appears in the official calendar (for example Paris, Bordeaux or Aix-Marseille).",
+        "description": "Select the academy, or type its name as it appears in the official calendar if the list is unavailable.",
         "data": {
           "location": "Location",
           "update_interval": "Update interval (hours, 1 to 168)",
@@ -76,12 +76,6 @@
             "name": "On vacation"
           }
         }
-      },
-      "today": {
-        "name": "Today"
-      },
-      "tomorrow": {
-        "name": "Tomorrow"
       }
     }
   }

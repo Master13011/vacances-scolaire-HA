@@ -14,7 +14,7 @@ from .coordinator import (
     VacancesScolairesDataUpdateCoordinator,
     get_timezone,
 )
-from .entity import VacancesScolairesEntity
+from .entity import VacancesScolairesEntity, get_entry_target
 
 # Fonction pour convertir la date dans le bon format et ajouter un fuseau horaire
 def convert_to_iso_format(date_str: str, location: str | None = None) -> str:
@@ -50,11 +50,14 @@ def convert_to_iso_format(date_str: str, location: str | None = None) -> str:
 class VacancesScolairesCalendar(VacancesScolairesEntity, CalendarEntity):
     """Vacances Scolaires Calendar class."""
 
-    _attr_name = None  # use the device name
-
     def __init__(self, coordinator: VacancesScolairesDataUpdateCoordinator) -> None:
         # The unique_id is unchanged so that existing calendars are kept.
-        super().__init__(coordinator, f"{coordinator.config_entry.entry_id}_calendar")
+        # The device name ("Vacances Scolaires") is prepended by Home
+        # Assistant, which gives "Vacances Scolaires Paris".
+        entry = coordinator.config_entry
+        super().__init__(coordinator, f"{entry.entry_id}_calendar")
+        _, target = get_entry_target(entry)
+        self._attr_name = target
 
     @property
     def event(self) -> CalendarEvent | None:

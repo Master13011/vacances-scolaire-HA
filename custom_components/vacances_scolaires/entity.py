@@ -40,11 +40,10 @@ class VacancesScolairesEntity(
         """Initialize the entity and attach it to the entry's device."""
         super().__init__(coordinator)
         entry = coordinator.config_entry
-        _, target = get_entry_target(entry)
         self._attr_unique_id = unique_id
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
-            name=f"Vacances Scolaires {target}",
+            name="Vacances Scolaires",
             manufacturer="Master13011",
             model="API",
         )

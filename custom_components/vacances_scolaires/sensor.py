@@ -75,6 +75,10 @@ class VacancesScolairesSensorBase(VacancesScolairesEntity, SensorEntity):
     # Suffix appended to the historical unique_id (kept unchanged so that
     # existing entities are not recreated).
     _unique_id_suffix = ""
+    # Prefix of the entity name; the device name ("Vacances Scolaires") is
+    # prepended by Home Assistant, which gives the historical names:
+    # "Vacances Scolaires Paris", "Vacances Scolaires Aujourd'hui Paris"...
+    _name_prefix = ""
 
     def __init__(self, coordinator: VacancesScolairesDataUpdateCoordinator) -> None:
         config_type, target = get_entry_target(coordinator.config_entry)
@@ -82,6 +86,7 @@ class VacancesScolairesSensorBase(VacancesScolairesEntity, SensorEntity):
             coordinator,
             f"{DOMAIN}_{config_type}_{target}{self._unique_id_suffix}",
         )
+        self._attr_name = f"{self._name_prefix} {target}".strip()
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -102,7 +107,6 @@ class VacancesScolairesSensorBase(VacancesScolairesEntity, SensorEntity):
 class VacancesScolairesSensor(VacancesScolairesSensorBase):
     """Main sensor: current or next school holidays."""
 
-    _attr_name = None  # use the device name
     _attr_translation_key = "vacances_scolaires"
     _attr_icon = "mdi:school"
 
@@ -157,7 +161,7 @@ class VacancesScolairesAujourdHuiSensor(VacancesScolairesDaySensor):
 
     _day_offset = 0
     _unique_id_suffix = "_today"
-    _attr_translation_key = "today"
+    _name_prefix = "Aujourd'hui"
     _attr_icon = "mdi:calendar-today"
 
 
@@ -166,5 +170,5 @@ class VacancesScolairesDemainSensor(VacancesScolairesDaySensor):
 
     _day_offset = 1
     _unique_id_suffix = "_tomorrow"
-    _attr_translation_key = "tomorrow"
+    _name_prefix = "Demain"
     _attr_icon = "mdi:calendar-arrow-right"
