@@ -57,12 +57,24 @@
     "sensor": {
       "vacances_scolaires": {
         "state_attributes": {
-          "start_date": "Start date",
-          "end_date": "End date",
-          "description": "Description",
-          "location": "Location",
-          "zone": "Zone",
-          "en_vacances": "On vacation"
+          "start_date": {
+            "name": "Start date"
+          },
+          "end_date": {
+            "name": "End date"
+          },
+          "description": {
+            "name": "Description"
+          },
+          "location": {
+            "name": "Location"
+          },
+          "zone": {
+            "name": "Zone"
+          },
+          "en_vacances": {
+            "name": "On vacation"
+          }
         }
       },
       "today": {
